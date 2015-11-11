@@ -159,7 +159,9 @@ def MakeLUT(num_distinct):
 		lut = vtk.vtkLookupTable()
 		lut.SetNumberOfTableValues(num_distinct)
 		lut.Build()
- 
+  
+		print("\nColor brightness")
+
 		for i in range(0, num_distinct):
 			rgb = list(ctf.GetColor(float(i)/(num_distinct+1)))+[1]
 			
@@ -373,9 +375,9 @@ def DisplaySurface(st):
 	# ------------------------------------------------------------
 	ren = vtk.vtkRenderer()
 	renWin = vtk.vtkRenderWindow()
+ 	renWin.AddRenderer(ren)
 	iren = vtk.vtkRenderWindowInteractor()
- 
-	renWin.AddRenderer(ren)
+	iren.SetInteractorStyle(None)
 	iren.SetRenderWindow(renWin)
  
 	# add actors
@@ -390,7 +392,7 @@ def DisplaySurface(st):
  
 	ren.GetActiveCamera().Zoom(1.5)
  
-	return iren
+	return (ren, renWin, iren)
  
 def choose_rgb(val):
 	'''
@@ -442,7 +444,155 @@ def choose_rgb(val):
 		dispColor2.set_red(temp.r)
 		dispColor2.set_green(temp.g)
 		dispColor2.set_blue(temp.b)
-	
+
+### Custom interactions
+# Handle the mouse button events.
+def ButtonEvent(obj, event):
+    global Rotating, Panning, Zooming
+    if event == "LeftButtonPressEvent":
+        Rotating = 1
+    elif event == "LeftButtonReleaseEvent":
+        Rotating = 0
+    elif event == "MiddleButtonPressEvent":
+        Panning = 1
+    elif event == "MiddleButtonReleaseEvent":
+        Panning = 0
+    elif event == "RightButtonPressEvent":
+        Zooming = 1
+    elif event == "RightButtonReleaseEvent":
+        Zooming = 0
+
+# General high-level logic
+def MouseMove(obj, event):
+    global Rotating, Panning, Zooming
+    global iren, renWin, ren
+    lastXYpos = iren.GetLastEventPosition()
+    lastX = lastXYpos[0]
+    lastY = lastXYpos[1]
+
+    xypos = iren.GetEventPosition()
+    x = xypos[0]
+    y = xypos[1]
+
+    center = renWin.GetSize()
+    centerX = center[0]/2.0
+    centerY = center[1]/2.0
+
+    if Rotating:
+        Rotate(ren, ren.GetActiveCamera(), x, y, lastX, lastY,
+               centerX, centerY)
+    elif Panning:
+        Pan(ren, ren.GetActiveCamera(), x, y, lastX, lastY, centerX,
+            centerY)
+    elif Zooming:
+        Dolly(ren, ren.GetActiveCamera(), x, y, lastX, lastY,
+              centerX, centerY)
+
+
+def Keypress(obj, event):
+    key = obj.GetKeySym()
+    if key == "e":
+        obj.InvokeEvent("DeleteAllObjects")
+        sys.exit()
+    elif key == "w":
+        Wireframe()
+    elif key =="s":
+        Surface()
+    elif key =="p":
+        isColorblind = PROTONOPIA
+        pick_colors()
+        ren, renWin, iren = DisplaySurface("PARAMETRIC_SURFACE")
+    elif key =="space":
+#        pick_colors()
+        Surface()
+
+
+# Routines that translate the events into camera motions.
+
+# This one is associated with the left mouse button. It translates x
+# and y relative motions into camera azimuth and elevation commands.
+def Rotate(renderer, camera, x, y, lastX, lastY, centerX, centerY):
+    camera.Azimuth(lastX-x)
+    camera.Elevation(lastY-y)
+    camera.OrthogonalizeViewUp()
+    renWin.Render()
+
+
+# Pan translates x-y motion into translation of the focal point and
+# position.
+def Pan(renderer, camera, x, y, lastX, lastY, centerX, centerY):
+    FPoint = camera.GetFocalPoint()
+    FPoint0 = FPoint[0]
+    FPoint1 = FPoint[1]
+    FPoint2 = FPoint[2]
+
+    PPoint = camera.GetPosition()
+    PPoint0 = PPoint[0]
+    PPoint1 = PPoint[1]
+    PPoint2 = PPoint[2]
+
+    renderer.SetWorldPoint(FPoint0, FPoint1, FPoint2, 1.0)
+    renderer.WorldToDisplay()
+    DPoint = renderer.GetDisplayPoint()
+    focalDepth = DPoint[2]
+
+    APoint0 = centerX+(x-lastX)
+    APoint1 = centerY+(y-lastY)
+
+    renderer.SetDisplayPoint(APoint0, APoint1, focalDepth)
+    renderer.DisplayToWorld()
+    RPoint = renderer.GetWorldPoint()
+    RPoint0 = RPoint[0]
+    RPoint1 = RPoint[1]
+    RPoint2 = RPoint[2]
+    RPoint3 = RPoint[3]
+
+    if RPoint3 != 0.0:
+        RPoint0 = RPoint0/RPoint3
+        RPoint1 = RPoint1/RPoint3
+        RPoint2 = RPoint2/RPoint3
+
+    camera.SetFocalPoint( (FPoint0-RPoint0)/2.0 + FPoint0,
+                          (FPoint1-RPoint1)/2.0 + FPoint1,
+                          (FPoint2-RPoint2)/2.0 + FPoint2)
+    camera.SetPosition( (FPoint0-RPoint0)/2.0 + PPoint0,
+                        (FPoint1-RPoint1)/2.0 + PPoint1,
+                        (FPoint2-RPoint2)/2.0 + PPoint2)
+    renWin.Render()
+
+
+# Dolly converts y-motion into a camera dolly commands.
+def Dolly(renderer, camera, x, y, lastX, lastY, centerX, centerY):
+    dollyFactor = pow(1.02,(0.5*(y-lastY)))
+    if camera.GetParallelProjection():
+        parallelScale = camera.GetParallelScale()*dollyFactor
+        camera.SetParallelScale(parallelScale)
+    else:
+        camera.Dolly(dollyFactor)
+        renderer.ResetCameraClippingRange()
+
+    renWin.Render()
+
+# Wireframe sets the representation of all actors to wireframe.
+def Wireframe():
+    actors = ren.GetActors()
+    actors.InitTraversal()
+    actor = actors.GetNextItem()
+    while actor:
+        actor.GetProperty().SetRepresentationToWireframe()
+        actor = actors.GetNextItem()
+
+    renWin.Render()
+
+# Surface sets the representation of all actors to surface.
+def Surface():
+    actors = ren.GetActors()
+    actors.InitTraversal()
+    actor = actors.GetNextItem()
+    while actor:
+        actor.GetProperty().SetRepresentationToSurface()
+        actor = actors.GetNextItem()
+    renWin.Render()	
  
 def pick_colors():
 	'''
@@ -484,10 +634,10 @@ def pick_colors():
 			# recalculate the distance
 			dist = dispColor1.get_distance(dispColor2)
  
-def Keypress(obj, event):
-	key = obj.GetKeySym()
-	if key == "space":
-		pick_colors()
+#def Keypress(obj, event):
+#	key = obj.GetKeySym()
+#	if key == "space":
+#		pick_colors()
 
 def select_colors(num_distinct):
 	the_colors = []
@@ -497,7 +647,7 @@ def select_colors(num_distinct):
 	r_dist = abs(dispColor1.r - dispColor2.r) / float(num_distinct - 2)
 	g_dist = abs(dispColor1.g - dispColor2.g) / float(num_distinct - 2)
 	b_dist = abs(dispColor1.b - dispColor2.b) / float(num_distinct - 2)
-	
+ 
 	i = 0
 	while i < (num_distinct-2):
 		red = 0.0
@@ -582,8 +732,32 @@ if __name__ == '__main__':
 				i = i + 2
 	pick_colors()
 	
-	iren = DisplaySurface("PARAMETRIC_SURFACE")
-	#iren.AddObserver("KeyPressEvent", Keypress)
-	iren.Render()
+ 	# Add the observers to watch for particular events. These invoke
+	# Python functions.
+	Rotating = 0
+	Panning = 0
+	Zooming = 0 
+ 
+	ren, renWin, iren = DisplaySurface("PARAMETRIC_SURFACE")
+ 
+	iren.AddObserver("LeftButtonPressEvent", ButtonEvent)
+	iren.AddObserver("LeftButtonReleaseEvent", ButtonEvent)
+	iren.AddObserver("MiddleButtonPressEvent", ButtonEvent)
+	iren.AddObserver("MiddleButtonReleaseEvent", ButtonEvent)
+	iren.AddObserver("RightButtonPressEvent", ButtonEvent)
+	iren.AddObserver("RightButtonReleaseEvent", ButtonEvent)
+	iren.AddObserver("MouseMoveEvent", MouseMove)
+	iren.AddObserver("KeyPressEvent", Keypress)
+	
+	
+	iren.Initialize()
+	renWin.Render()
 	iren.Start()
+ 
+#	my_iren.Render()
+#	
+#	my_iren.AddObserver("KeyPressEvent", Keypress)
+#	
+#	my_iren.Start()
+#	my_iren.Initialize()
 	
