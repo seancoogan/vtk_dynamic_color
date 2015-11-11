@@ -9,7 +9,6 @@ import random
 from random import randint
 from color import Color
 
-
 # Available surfaces are:
 SURFACE_TYPE = set(["PLANE",  "SPHERE", "PARAMETRIC_SURFACE"])
 # The constant values for the colorblind options
@@ -20,10 +19,11 @@ TRITANOPIA = 4
 isColorblind = 0 # start by assuming not colorblind
 total_bands = 8
 
-RED = Color(1.0, 0.0, 0.0)
-GREEN = Color(0.0, 1.0, 0.0)
-BLUE = Color(0.0, 0.0, 1.0)
-YELLOW = Color(1.0, 1.0, 0.0)
+# 
+# True: use Grey as the midpoint
+# False: use the midpoint calculation algorithm
+#
+GREY_VALUE = True
 
 dispColor1 = Color()
 dispColor2 = Color()
@@ -151,15 +151,20 @@ def MakeLUT(num_distinct):
 		#for i in xrange(0, num_distinct):
 		#	ctf.AddRGBPoint(color_list[i][0], color_list[i][1],color_list[i][2],color_list[i][2])
 		
-		midpoint = dispColor1.calculate_midpoint(dispColor2)
 		ctf.AddRGBPoint(0.0, dispColor1.r, dispColor1.g, dispColor1.b)
-		ctf.AddRGBPoint(0.5, midpoint[0], midpoint[1], midpoint[2])
+		
+		if GREY_VALUE:
+			ctf.AddRGBPoint(0.5, 0.5, 0.5, 0.5) # grey value 
+		else:
+			midpoint = dispColor1.calculate_midpoint(dispColor2)
+			ctf.AddRGBPoint(0.5, midpoint[0], midpoint[1], midpoint[2])
+			
 		ctf.AddRGBPoint(1.0, dispColor2.r, dispColor2.g, dispColor2.b)
  
 		lut = vtk.vtkLookupTable()
 		lut.SetNumberOfTableValues(num_distinct)
 		lut.Build()
-  
+    
 		print("\nColor brightness")
 
 		for i in range(0, num_distinct):
@@ -217,14 +222,12 @@ def Frequencies(bands, src):
 def MakeGlyphs(src, reverseNormals):
 	'''
 	Glyph the normals on the surface.
-
 	You may need to adjust the parameters for maskPts, arrow and glyph for a
 	nice appearance.
  
 	:param: src - the surface to glyph.
 	:param: reverseNormals - if True the normals on the surface are reversed.
 	:return: The glyph object.
-
 	'''
 	# Sometimes the contouring algorithm can create a volume whose gradient
 	# vector and ordering of polygon (using the right hand rule) are
@@ -760,4 +763,3 @@ if __name__ == '__main__':
 #	
 #	my_iren.Start()
 #	my_iren.Initialize()
-	
