@@ -4,13 +4,10 @@ from __future__ import print_function
 import math
 import vtk
 import sys
-import os
 import random
 from random import randint
 from color import Color
 
-# Available surfaces are:
-SURFACE_TYPE = set(["PLANE",  "SPHERE", "PARAMETRIC_SURFACE"])
 # The constant values for the colorblind options
 ALL = 1
 DEUTERANOPIA = 2
@@ -82,34 +79,6 @@ def MakeElevations(src):
 	elevFilter.SetScalarRange(bounds[2], bounds[3])
 	elevFilter.Update()
 	return elevFilter.GetPolyDataOutput()
- 
- 
-def MakePlane():
-	'''
-	Make a plane as the source.
-	:return: vtkPolyData with normal and scalar data.
-	'''
-	source = vtk.vtkPlaneSource()
-	source.SetOrigin(-10.0, -10.0, 0.0)
-	source.SetPoint2(-10.0, 10.0, 0.0)
-	source.SetPoint1(10.0, -10.0, 0.0)
-	source.SetXResolution(20)
-	source.SetYResolution(20)
-	source.Update()
-	return MakeElevations(source.GetOutput())
- 
-def MakeSphere():
-	'''
-	Make a sphere as the source.
-	:return: vtkPolyData with normal and scalar data.
-	'''
-	source = vtk.vtkSphereSource()
-	source.SetCenter(0.0, 0.0, 0.0)
-	source.SetRadius(10.0)
-	source.SetThetaResolution(32)
-	source.SetPhiResolution(32)
-	source.Update()
-	return MakeElevations(source.GetOutput())
  
 def MakeParametricSource():
 	'''
@@ -263,30 +232,20 @@ def MakeGlyphs(src, reverseNormals):
 	glyph.Update()
 	return glyph
  
-def DisplaySurface(st):
+def DisplaySurface():
 	'''
 	Make and display the surface.
 	:param: st - the surface to display.
 	:return The vtkRenderWindowInteractor.
 	'''
-	surface = st.upper()
-	if  (not(surface in SURFACE_TYPE) ):
-		print(st, "is not a surface.")
-		iren = vtk.vtkRenderWindowInteractor()
-		return iren
 	# ------------------------------------------------------------
 	# Create the surface, lookup tables, contour filter etc.
 	# ------------------------------------------------------------
-	src = vtk.vtkPolyData()
-	if (surface == "PLANE"):
-		src = MakePlane()
-	elif (surface == "SPHERE"):
-		src = MakeSphere()
-	elif (surface == "PARAMETRIC_SURFACE"):
-		src = MakeParametricSource()
+#	src = vtk.vtkPolyData()
+	src = MakeParametricSource()
 		# The scalars are named "Scalars"by default
 		# in the parametric surfaces, so change the name.
-		src.GetPointData().GetScalars().SetName("Elevation");
+	src.GetPointData().GetScalars().SetName("Elevation");
 	scalarRange = src.GetScalarRange()
 
 	lut = MakeLUT(total_bands)
@@ -504,7 +463,8 @@ def Keypress(obj, event):
     elif key =="p":
         isColorblind = PROTONOPIA
         pick_colors()
-        ren, renWin, iren = DisplaySurface("PARAMETRIC_SURFACE")
+        ren, renWin, iren = DisplaySurface()
+        renWin.Render()
     elif key =="space":
 #        pick_colors()
         Surface()
@@ -741,7 +701,7 @@ if __name__ == '__main__':
 	Panning = 0
 	Zooming = 0 
  
-	ren, renWin, iren = DisplaySurface("PARAMETRIC_SURFACE")
+	ren, renWin, iren = DisplaySurface()
  
 	iren.AddObserver("LeftButtonPressEvent", ButtonEvent)
 	iren.AddObserver("LeftButtonReleaseEvent", ButtonEvent)
