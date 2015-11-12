@@ -108,7 +108,8 @@ def MakeLUT(num_distinct):
 	'''
 	Make a lookup table using vtkColorSeries.
 	:return: An indexed lookup table.
-	'''		
+	'''
+	print("MakeLUT")		
 	if num_distinct < 3:
 		print("The number of bands must be greater than or equal to 3.")
 		sys.exit(1)
@@ -243,6 +244,7 @@ def DisplaySurface():
 	# ------------------------------------------------------------
 #	src = vtk.vtkPolyData()
 	src = MakeParametricSource()
+	print("DisplaySurface")
 		# The scalars are named "Scalars"by default
 		# in the parametric surfaces, so change the name.
 	src.GetPointData().GetScalars().SetName("Elevation");
@@ -462,14 +464,28 @@ def Keypress(obj, event):
         Surface()
     elif key =="p":
         isColorblind = PROTONOPIA
-        pick_colors()
-        ren, renWin, iren = DisplaySurface()
-        renWin.Render()
+        UpdateColor()
     elif key =="space":
 #        pick_colors()
         Surface()
 
-
+def UpdateColor():
+    pick_colors()
+    lut = MakeLUT(total_bands)
+    renWin = iren.GetRenderWindow()
+    rens = renWin.GetRenderers()
+    rens.InitTraversal()
+    ren_temp = rens.GetNextItem()
+    while ren_temp:
+        actors = ren_temp.GetActors2D()
+        actors.InitTraversal()
+        actor = actors.GetNextItem()
+        while actor:
+            actor.SetLookupTable(lut)
+            actor = actors.GetNextItem()
+        ren_temp = rens.GetNextItem()
+    renWin.Render()
+    
 # Routines that translate the events into camera motions.
 
 # This one is associated with the left mouse button. It translates x
@@ -596,15 +612,10 @@ def pick_colors():
 			
 			# recalculate the distance
 			dist = dispColor1.get_distance(dispColor2)
- 
-#def Keypress(obj, event):
-#	key = obj.GetKeySym()
-#	if key == "space":
-#		pick_colors()
 
 def select_colors(num_distinct):
 	the_colors = []
-	
+	print("booyah")
 	the_colors.append([0.0, dispColor1.r, dispColor1.g, dispColor1.b])
 	
 	r_dist = abs(dispColor1.r - dispColor2.r) / float(num_distinct - 2)
@@ -642,80 +653,80 @@ def select_colors(num_distinct):
 	
 	return the_colors
  
-if __name__ == '__main__':
+#if __name__ == '__main__':
 	'''
 	Determine what arguments were provided by the user.
 	Also provide the user with some information about the 
 	program using the -help option.
 	'''
-	if len(sys.argv) > 1:
-		if sys.argv[1] == "-h" or\
-			sys.argv[1] == "--h" or\
-			sys.argv[1] == "--help" or \
-			sys.argv[1] == "-help":
-			print("\n-cb 	\tColorblind option.")
-			print("\tall : \tCompletely Colorblind")
-			print("\tnone : \tNot Colorblind")
-			print("\td : \tDeuteranopia (Colorblind in the Medium Wavelength)")
-			print("\tp : \tProtonopia   (Colorblind in the Long   Wavelength)")
-			print("\tt : \tTritanopia   (Colorblind in the Short  Wavelength)")
-			print("\n-b 	\tNumber of bands option. Controls the number of distinct bands will be displayed.")
+if len(sys.argv) > 1:
+	if sys.argv[1] == "-h" or\
+		sys.argv[1] == "--h" or\
+		sys.argv[1] == "--help" or \
+		sys.argv[1] == "-help":
+		print("\n-cb 	\tColorblind option.")
+		print("\tall : \tCompletely Colorblind")
+		print("\tnone : \tNot Colorblind")
+		print("\td : \tDeuteranopia (Colorblind in the Medium Wavelength)")
+		print("\tp : \tProtonopia   (Colorblind in the Long   Wavelength)")
+		print("\tt : \tTritanopia   (Colorblind in the Short  Wavelength)")
+		print("\n-b 	\tNumber of bands option. Controls the number of distinct bands will be displayed.")
+		sys.exit(1)
+	else:
+		if len(sys.argv) != 1 and len(sys.argv) != 3 and len(sys.argv) != 5:
+			print("Please provide the correct arguments and options.")
+			print("Use the help option to determine appropriate options.")
 			sys.exit(1)
-		else:
-			if len(sys.argv) != 1 and len(sys.argv) != 3 and len(sys.argv) != 5:
-				print("Please provide the correct arguments and options.")
-				print("Use the help option to determine appropriate options.")
-				sys.exit(1)
-			
-			i = 1 # start at the first optional arguement
-			while i < len(sys.argv):
-				if sys.argv[i] == "-cb" and sys.argv[i+1] == "all":
-					# completely colorblind
-					isColorblind = ALL
-				elif sys.argv[i] == "-cb" and sys.argv[i+1] == "d":
-					# color blind to the medium wavelength
-					isColorblind = DEUTERANOPIA
-				elif sys.argv[i] == "-cb" and sys.argv[i+1] == "p":
-					# color blind to the long wavelength
-					isColorblind = PROTONOPIA
-				elif sys.argv[i] == "-cb" and sys.argv[i+1] == "t":
-					# color blind to the short wavelength
-					isColorblind = TRITANOPIA
-				elif sys.argv[i] == "-cb" and sys.argv[i+1] == "none":
-					# color blind to the short wavelength
-					isColorblind = 0
-					pick_colors()
-				elif sys.argv[i] == "-cb":
-					print("Invalid colorblind option: Using NONE.")
-				elif sys.argv[i] == "-b":
-					if int(sys.argv[i+1]) >= 3:
-						total_bands = int(sys.argv[i+1])
-					else:
-						print("Invalid number of bands: Using 8.")
-				i = i + 2
-	pick_colors()
 	
- 	# Add the observers to watch for particular events. These invoke
-	# Python functions.
-	Rotating = 0
-	Panning = 0
-	Zooming = 0 
+		i = 1 # start at the first optional arguement
+		while i < len(sys.argv):
+			if sys.argv[i] == "-cb" and sys.argv[i+1] == "all":
+				# completely colorblind
+				isColorblind = ALL
+			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "d":
+				# color blind to the medium wavelength
+				isColorblind = DEUTERANOPIA
+			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "p":
+				# color blind to the long wavelength
+				isColorblind = PROTONOPIA
+			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "t":
+				# color blind to the short wavelength
+				isColorblind = TRITANOPIA
+			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "none":
+				# color blind to the short wavelength
+				isColorblind = 0
+				pick_colors()
+			elif sys.argv[i] == "-cb":
+				print("Invalid colorblind option: Using NONE.")
+			elif sys.argv[i] == "-b":
+				if int(sys.argv[i+1]) >= 3:
+					total_bands = int(sys.argv[i+1])
+				else:
+					print("Invalid number of bands: Using 8.")
+			i = i + 2
+pick_colors()
+
+ # Add the observers to watch for particular events. These invoke
+# Python functions.
+Rotating = 0
+Panning = 0
+Zooming = 0 
  
-	ren, renWin, iren = DisplaySurface()
+ren, renWin, iren = DisplaySurface()
  
-	iren.AddObserver("LeftButtonPressEvent", ButtonEvent)
-	iren.AddObserver("LeftButtonReleaseEvent", ButtonEvent)
-	iren.AddObserver("MiddleButtonPressEvent", ButtonEvent)
-	iren.AddObserver("MiddleButtonReleaseEvent", ButtonEvent)
-	iren.AddObserver("RightButtonPressEvent", ButtonEvent)
-	iren.AddObserver("RightButtonReleaseEvent", ButtonEvent)
-	iren.AddObserver("MouseMoveEvent", MouseMove)
-	iren.AddObserver("KeyPressEvent", Keypress)
+iren.AddObserver("LeftButtonPressEvent", ButtonEvent)
+iren.AddObserver("LeftButtonReleaseEvent", ButtonEvent)
+iren.AddObserver("MiddleButtonPressEvent", ButtonEvent)
+iren.AddObserver("MiddleButtonReleaseEvent", ButtonEvent)
+iren.AddObserver("RightButtonPressEvent", ButtonEvent)
+iren.AddObserver("RightButtonReleaseEvent", ButtonEvent)
+iren.AddObserver("MouseMoveEvent", MouseMove)
+iren.AddObserver("KeyPressEvent", Keypress)
 	
 	
-	iren.Initialize()
-	renWin.Render()
-	iren.Start()
+iren.Initialize()
+renWin.Render()
+iren.Start()
  
 #	my_iren.Render()
 #	
