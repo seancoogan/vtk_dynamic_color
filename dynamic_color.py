@@ -462,12 +462,18 @@ def Keypress(obj, event):
         Wireframe()
     elif key =="s":
         Surface()
+    elif key =="a":
+        isColorblind = ALL
+        UpdateColor()
+    elif key =="d":
+        isColorblind = DEUTERANOPIA
+        UpdateColor()
     elif key =="p":
         isColorblind = PROTONOPIA
         UpdateColor()
-    elif key =="space":
-#        pick_colors()
-        Surface()
+    elif key =="t":
+        isColorblind = TRITANOPIA
+        UpdateColor()
 
 def UpdateColor():
     pick_colors()
@@ -477,12 +483,18 @@ def UpdateColor():
     rens.InitTraversal()
     ren_temp = rens.GetNextItem()
     while ren_temp:
-        actors = ren_temp.GetActors2D()
+        actors = ren_temp.GetActors()
         actors.InitTraversal()
         actor = actors.GetNextItem()
         while actor:
-            actor.SetLookupTable(lut)
+            actor.GetMapper().SetLookupTable(lut)
             actor = actors.GetNextItem()
+        actors2D = ren_temp.GetActors2D()
+        actors2D.InitTraversal()
+        actor2D = actors2D.GetNextItem()
+        while actor2D:
+            actor2D.SetLookupTable(lut)
+            actor2D = actors2D.GetNextItem()
         ren_temp = rens.GetNextItem()
     renWin.Render()
     
