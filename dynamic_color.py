@@ -22,17 +22,18 @@ total_bands = 8
 #
 GREY_VALUE = True
 
+# The Display Colors
 dispColor1 = Color()
 dispColor2 = Color()
 
-def MakeBands(dR, numberOfBands, nearestInteger):
-	'''
+'''
 	Divide a range into bands
 	:param: dR - [min, max] the range that is to be covered by the bands.
 	:param: numberOfBands - the number of bands, a positive integer.
 	:param: nearestInteger - if True then [floor(min), ceil(max)] is used.
 	:return: A List consisting of [min, midpoint, max] for each band.
-	'''
+'''
+def MakeBands(dR, numberOfBands, nearestInteger):
 	bands = list()
 	if (dR[1] < dR[0]) or (numberOfBands <= 0):
 		return bands
@@ -48,13 +49,13 @@ def MakeBands(dR, numberOfBands, nearestInteger):
 		b = [b[0] + dx, b[1] + dx, b[2] + dx]
 		i += 1
 	return bands
- 
-def MakeIntegralBands(dR):
-	'''
+
+'''
 	Divide a range into integral bands
 	:param: dR - [min, max] the range that is to be covered by the bands.
 	:return: A List consisting of [min, midpoint, max] for each band.
-	'''
+'''
+def MakeIntegralBands(dR):
 	bands = list()
 	if (dR[1] < dR[0]):
 		return bands
@@ -63,13 +64,14 @@ def MakeIntegralBands(dR):
 	x[1] = math.ceil(x[1])
 	numberOfBands = int(abs(x[1]) + abs(x[0]))
 	return MakeBands(x,numberOfBands, False)
- 
-def MakeElevations(src):
-	'''
+	
+'''
 	Generate elevations over the surface.
 	:param: src - the vtkPolyData source.
 	:return: - vtkPolyData source with elevations.
-	'''
+'''
+def MakeElevations(src):
+
 	bounds = [ 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 ]
 	src.GetBounds(bounds)
 	elevFilter = vtk.vtkElevationFilter()
@@ -79,12 +81,13 @@ def MakeElevations(src):
 	elevFilter.SetScalarRange(bounds[2], bounds[3])
 	elevFilter.Update()
 	return elevFilter.GetPolyDataOutput()
- 
-def MakeParametricSource():
-	'''
+	
+'''
 	Make a parametric surface as the source.
 	:return: vtkPolyData with normal and scalar data.
-	'''
+'''
+def MakeParametricSource():
+
 	fn = vtk.vtkParametricRandomHills()
 	fn.AllowRandomGenerationOn()
 	fn.SetRandomSeed(1)
@@ -103,12 +106,13 @@ def MakeParametricSource():
 	source.GetOutput().GetPointData().GetNormals().SetName('Normals')
 	source.GetOutput().GetPointData().GetScalars().SetName('Scalars')
 	return source.GetOutput()
- 
-def MakeLUT(num_distinct):
-	'''
+
+'''
 	Make a lookup table using vtkColorSeries.
 	:return: An indexed lookup table.
-	'''
+'''
+def MakeLUT(num_distinct):
+
 	print("MakeLUT")		
 	if num_distinct < 3:
 		print("The number of bands must be greater than or equal to 3.")
@@ -116,10 +120,6 @@ def MakeLUT(num_distinct):
 	else:
 		ctf = vtk.vtkColorTransferFunction()
 		ctf.SetColorSpaceToDiverging()
-		
-		#color_list = select_colors(num_distinct)
-		#for i in xrange(0, num_distinct):
-		#	ctf.AddRGBPoint(color_list[i][0], color_list[i][1],color_list[i][2],color_list[i][2])
 		
 		ctf.AddRGBPoint(0.0, dispColor1.r, dispColor1.g, dispColor1.b)
 		
@@ -148,13 +148,14 @@ def MakeLUT(num_distinct):
 			lut.SetTableValue(i,rgb)
 			
 	return lut
- 
-def ReverseLUT(lut):
-	'''
+
+'''
 	Create a lookup table with the colors reversed.
 	:param: lut - An indexed lookup table.
 	:return: The reversed indexed lookup table.
-	'''
+'''
+def ReverseLUT(lut):
+
 	lutr = vtk.vtkLookupTable()
 	lutr.DeepCopy(lut)
 	t = lut.GetNumberOfTableValues() - 1
@@ -169,14 +170,15 @@ def ReverseLUT(lut):
 	for i in revList:
 		lutr.SetAnnotation(t - i, lut.GetAnnotation(i))
 	return lutr
- 
-def Frequencies(bands, src):
-    '''
+
+'''
     Count the number of scalars in each band.
     :param: bands - the bands.
     :param: src - the vtkPolyData source.
     :return: The frequencies of the scalars in each band.
-    '''
+'''
+def Frequencies(bands, src):
+
     freq = dict()
     for i in range(len(bands)):
         freq[i] = 0;
@@ -188,17 +190,19 @@ def Frequencies(bands, src):
                 freq[j] = freq[j] + 1
                 break
     return freq
- 
-def MakeGlyphs(src, reverseNormals):
-	'''
+
+'''
 	Glyph the normals on the surface.
-	You may need to adjust the parameters for maskPts, arrow and glyph for a
-	nice appearance.
+	You may need to adjust the parameters for maskPts, 
+	arrow and glyph for a nice appearance.
  
 	:param: src - the surface to glyph.
-	:param: reverseNormals - if True the normals on the surface are reversed.
+	:param: reverseNormals - if True the normals on the surface 
+		are reversed.
 	:return: The glyph object.
-	'''
+'''
+def MakeGlyphs(src, reverseNormals):
+
 	# Sometimes the contouring algorithm can create a volume whose gradient
 	# vector and ordering of polygon (using the right hand rule) are
 	# inconsistent. vtkReverseSense cures this problem.
@@ -232,13 +236,14 @@ def MakeGlyphs(src, reverseNormals):
 	glyph.OrientOn()
 	glyph.Update()
 	return glyph
- 
-def DisplaySurface():
-	'''
+
+'''
 	Make and display the surface.
 	:param: st - the surface to display.
 	:return The vtkRenderWindowInteractor.
-	'''
+'''
+def DisplaySurface():
+
 	# ------------------------------------------------------------
 	# Create the surface, lookup tables, contour filter etc.
 	# ------------------------------------------------------------
@@ -357,11 +362,12 @@ def DisplaySurface():
 	ren.GetActiveCamera().Zoom(1.5)
  
 	return (ren, renWin, iren)
- 
-def choose_rgb(val):
-	'''
+
+'''
 	Randomly choose the rgb values.
-	'''
+'''
+def choose_rgb(val):
+
 	global dispColor1, dispColor2
 	
 	temp = Color(0.0,0.0,0.0) # temporary color
@@ -409,8 +415,16 @@ def choose_rgb(val):
 		dispColor2.set_green(temp.g)
 		dispColor2.set_blue(temp.b)
 
-### Custom interactions
-# Handle the mouse button events.
+''' 
+
+	Custom interactions 
+
+'''
+
+
+'''
+	Handle the mouse button events.
+'''
 def ButtonEvent(obj, event):
     global Rotating, Panning, Zooming
     if event == "LeftButtonPressEvent":
@@ -426,7 +440,9 @@ def ButtonEvent(obj, event):
     elif event == "RightButtonReleaseEvent":
         Zooming = 0
 
-# General high-level logic
+'''
+	General high-level logic
+'''
 def MouseMove(obj, event):
     global Rotating, Panning, Zooming
     global iren, renWin, ren
@@ -452,7 +468,10 @@ def MouseMove(obj, event):
         Dolly(ren, ren.GetActiveCamera(), x, y, lastX, lastY,
               centerX, centerY)
 
-
+'''
+	The user pressed a key, so we need to handle
+	the event appropriately.
+'''
 def Keypress(obj, event):
     key = obj.GetKeySym()
     if key == "e":
@@ -475,6 +494,13 @@ def Keypress(obj, event):
         isColorblind = TRITANOPIA
         UpdateColor()
 
+'''
+	If the user pressed a key corresponding
+	to a change in the colorblind options
+	we need to redraw the scene.
+	
+	NOTE: acts like glutredisplay();
+'''
 def UpdateColor():
     pick_colors()
     lut = MakeLUT(total_bands)
@@ -498,10 +524,12 @@ def UpdateColor():
         ren_temp = rens.GetNextItem()
     renWin.Render()
     
-# Routines that translate the events into camera motions.
+'''
+	Routines that translate the events into camera motions.
 
-# This one is associated with the left mouse button. It translates x
-# and y relative motions into camera azimuth and elevation commands.
+	This one is associated with the left mouse button. It translates x
+	and y relative motions into camera azimuth and elevation commands.
+'''
 def Rotate(renderer, camera, x, y, lastX, lastY, centerX, centerY):
     camera.Azimuth(lastX-x)
     camera.Elevation(lastY-y)
@@ -509,8 +537,10 @@ def Rotate(renderer, camera, x, y, lastX, lastY, centerX, centerY):
     renWin.Render()
 
 
-# Pan translates x-y motion into translation of the focal point and
-# position.
+'''
+	Pan translates x-y motion into translation 
+	of the focal point and position.
+'''
 def Pan(renderer, camera, x, y, lastX, lastY, centerX, centerY):
     FPoint = camera.GetFocalPoint()
     FPoint0 = FPoint[0]
@@ -564,7 +594,9 @@ def Dolly(renderer, camera, x, y, lastX, lastY, centerX, centerY):
 
     renWin.Render()
 
-# Wireframe sets the representation of all actors to wireframe.
+'''
+	Wireframe sets the representation of all actors to wireframe.
+'''
 def Wireframe():
     actors = ren.GetActors()
     actors.InitTraversal()
@@ -575,7 +607,9 @@ def Wireframe():
 
     renWin.Render()
 
-# Surface sets the representation of all actors to surface.
+'''
+	Surface sets the representation of all actors to surface.
+'''
 def Surface():
     actors = ren.GetActors()
     actors.InitTraversal()
@@ -584,13 +618,14 @@ def Surface():
         actor.GetProperty().SetRepresentationToSurface()
         actor = actors.GetNextItem()
     renWin.Render()	
- 
-def pick_colors():
-	'''
+
+'''
 	Randomly pick two colors. Ensure that the colors
 	are both highly saturated and that they are a certain
 	distance apart.
-	'''
+''' 
+def pick_colors():
+
 	global dispColor1, dispColor2
 	
 	if isColorblind == ALL:
@@ -625,6 +660,11 @@ def pick_colors():
 			# recalculate the distance
 			dist = dispColor1.get_distance(dispColor2)
 
+'''
+	Select the two display colors.
+	These colors must be highly saturated
+	and they must be a certain distance apart.
+'''
 def select_colors(num_distinct):
 	the_colors = []
 	print("booyah")
