@@ -20,7 +20,7 @@ total_bands = 8
 # True: use Grey as the midpoint
 # False: use the midpoint calculation algorithm
 #
-GREY_VALUE = False
+GREY_VALUE = True
 
 dispColor1 = Color()
 dispColor2 = Color()
