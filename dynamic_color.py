@@ -112,8 +112,7 @@ def MakeParametricSource():
 	:return: An indexed lookup table.
 '''
 def MakeLUT(num_distinct):
-
-	print("MakeLUT")		
+	
 	if num_distinct < 3:
 		print("The number of bands must be greater than or equal to 3.")
 		sys.exit(1)
@@ -135,14 +134,9 @@ def MakeLUT(num_distinct):
 		lut.SetNumberOfTableValues(num_distinct)
 		lut.Build()
     
-		print("\nColor brightness")
 
 		for i in range(0, num_distinct):
 			rgb = list(ctf.GetColor(float(i)/(num_distinct+1)))+[1]
-			
-			# print the brightness of each color
-			temp = Color(rgb[0],rgb[1],rgb[2])
-			print(temp.calculate_bightness())
 			
 			# set the value into the table
 			lut.SetTableValue(i,rgb)
@@ -249,9 +243,8 @@ def DisplaySurface():
 	# ------------------------------------------------------------
 #	src = vtk.vtkPolyData()
 	src = MakeParametricSource()
-	print("DisplaySurface")
-		# The scalars are named "Scalars"by default
-		# in the parametric surfaces, so change the name.
+	# The scalars are named "Scalars"by default
+	# in the parametric surfaces, so change the name.
 	src.GetPointData().GetScalars().SetName("Elevation");
 	scalarRange = src.GetScalarRange()
 
@@ -363,57 +356,6 @@ def DisplaySurface():
  
 	return (ren, renWin, iren)
 
-'''
-	Randomly choose the rgb values.
-'''
-def choose_rgb(val):
-
-	global dispColor1, dispColor2
-	
-	temp = Color(0.0,0.0,0.0) # temporary color
-	
-	notsat = 0
-	if isColorblind == DEUTERANOPIA:
-		notsat = 0 # red
-	elif isColorblind == PROTONOPIA:
-		notsat = 1 # green
-	elif isColorblind == TRITANOPIA:
-		notsat = 2 # blue
-	else:
-		notsat = randint(0,2) # randomly pick the value of 0 for rgb
-	
-	sat = randint(0,2) # randomly pick the value of 1 for rgb
-	other = randint(0,2)
-	while notsat == sat or notsat == other or other == sat:
-		if notsat == sat:
-			sat = randint(0,2)
-		if notsat == other:
-			other = randint(0,2)
-		if other == sat:
-			other = randint(0,2)
-	
-	# set rgb of temp Color
-	temp.set_value(sat, 1.0)
-	temp.set_value(notsat, 0.0)
-	fval = random.uniform(0.0, 1.0)
-	
-	# try and get rid of the yellow color
-	if isColorblind == TRITANOPIA and other == 1:
-		while fval >= 0.5:
-			fval = random.uniform(0.0, 1.0)
-	
-	temp.set_value(other, fval)
-	
-	# set the first color
-	if val == 1:
-		dispColor1.set_red(temp.r)
-		dispColor1.set_green(temp.g)
-		dispColor1.set_blue(temp.b)
-	# set the second color
-	elif val == 2:
-		dispColor2.set_red(temp.r)
-		dispColor2.set_green(temp.g)
-		dispColor2.set_blue(temp.b)
 
 ''' 
 
@@ -473,26 +415,28 @@ def MouseMove(obj, event):
 	the event appropriately.
 '''
 def Keypress(obj, event):
-    key = obj.GetKeySym()
-    if key == "e":
-        obj.InvokeEvent("DeleteAllObjects")
-        sys.exit()
-    elif key == "w":
-        Wireframe()
-    elif key =="s":
-        Surface()
-    elif key =="a":
-        isColorblind = ALL
-        UpdateColor()
-    elif key =="d":
-        isColorblind = DEUTERANOPIA
-        UpdateColor()
-    elif key =="p":
-        isColorblind = PROTONOPIA
-        UpdateColor()
-    elif key =="t":
-        isColorblind = TRITANOPIA
-        UpdateColor()
+	global isColorblind, DEUTERANOPIA, PROTONOPIA, TRITANOPIA
+
+	key = obj.GetKeySym()
+	if key == "e":
+		obj.InvokeEvent("DeleteAllObjects")
+		sys.exit()
+	elif key == "w":
+		Wireframe()
+	elif key =="s":
+		Surface()
+	elif key =="a":
+		isColorblind = ALL
+		UpdateColor()
+	elif key =="d":
+		isColorblind = DEUTERANOPIA
+		UpdateColor()
+	elif key =="p":
+		isColorblind = PROTONOPIA
+		UpdateColor()
+	elif key =="t":
+		isColorblind = TRITANOPIA
+		UpdateColor()
 
 '''
 	If the user pressed a key corresponding
@@ -620,13 +564,65 @@ def Surface():
     renWin.Render()	
 
 '''
+	Randomly choose the rgb values.
+'''
+def choose_rgb(val):
+
+	global dispColor1, dispColor2, isColorblind	
+	temp = Color(0.0,0.0,0.0) # temporary color
+	
+	notsat = 0
+	if isColorblind == DEUTERANOPIA:
+		notsat = 1 # green
+	elif isColorblind == PROTONOPIA:
+		notsat = 0 # red
+	elif isColorblind == TRITANOPIA:
+		notsat = 2 # blue
+	else:
+		notsat = randint(0,2) # randomly pick the value of 0 for rgb
+	
+	sat = randint(0,2) # randomly pick the value of 1 for rgb
+	other = randint(0,2)
+	while notsat == sat or notsat == other or other == sat:
+		if notsat == sat:
+			sat = randint(0,2)
+		if notsat == other:
+			other = randint(0,2)
+		if other == sat:
+			other = randint(0,2)
+	
+	# set rgb of temp Color
+	temp.set_value(sat, 1.0)
+	temp.set_value(notsat, 0.0)
+	fval = random.uniform(0.0, 1.0)
+	
+	# try and get rid of the yellow color
+	if isColorblind == TRITANOPIA and other == 1:
+		while fval <= 0.7:
+			fval = random.uniform(0.0, 1.0)
+	
+	temp.set_value(other, fval)
+	
+	# set the first color
+	if val == 1:
+		dispColor1.set_red(temp.r)
+		dispColor1.set_green(temp.g)
+		dispColor1.set_blue(temp.b)
+	# set the second color
+	elif val == 2:
+		dispColor2.set_red(temp.r)
+		dispColor2.set_green(temp.g)
+		dispColor2.set_blue(temp.b)
+
+	
+'''
 	Randomly pick two colors. Ensure that the colors
 	are both highly saturated and that they are a certain
 	distance apart.
 ''' 
 def pick_colors():
 
-	global dispColor1, dispColor2
+	global dispColor1, dispColor2, isColorblind
 	
 	if isColorblind == ALL:
 		# black color
@@ -659,15 +655,15 @@ def pick_colors():
 			
 			# recalculate the distance
 			dist = dispColor1.get_distance(dispColor2)
-
+	
 '''
-	Select the two display colors.
-	These colors must be highly saturated
-	and they must be a certain distance apart.
+	Create a list of all of the colors that 
+	will be displayed on the range. This is 
+	one of two algorithms that will be used to 
+	display the colors.
 '''
 def select_colors(num_distinct):
 	the_colors = []
-	print("booyah")
 	the_colors.append([0.0, dispColor1.r, dispColor1.g, dispColor1.b])
 	
 	r_dist = abs(dispColor1.r - dispColor2.r) / float(num_distinct - 2)
