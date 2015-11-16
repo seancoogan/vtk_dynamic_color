@@ -332,17 +332,28 @@ def DisplaySurface():
 	scalarBar.SetLookupTable(lut) #lutr not lut to reverse
 	scalarBar.SetTitle('Elevation (m)')
  
+	# create a text actor
+	txt = vtk.vtkTextActor()
+	txt.SetInput(PrintColorBlindType())
+	txtprop=txt.GetTextProperty()
+	txtprop.SetFontFamilyToArial()
+	txtprop.SetFontSize(18)
+	txtprop.SetColor(0,0,0)
+	txt.SetDisplayPosition(20,30)
+ 
 	# ------------------------------------------------------------
 	# Create the RenderWindow, Renderer and Interactor
 	# ------------------------------------------------------------
 	ren = vtk.vtkRenderer()
 	renWin = vtk.vtkRenderWindow()
+	renWin.SetWindowName("Test")
  	renWin.AddRenderer(ren)
 	iren = vtk.vtkRenderWindowInteractor()
 	iren.SetInteractorStyle(None)
 	iren.SetRenderWindow(renWin)
  
 	# add actors
+	ren.AddViewProp(txt)
 	ren.AddViewProp(srcActor)
 	ren.AddViewProp(edgeActor)
 	ren.AddViewProp(glyphActor)
@@ -355,6 +366,27 @@ def DisplaySurface():
 	ren.GetActiveCamera().Zoom(1.5)
  
 	return (ren, renWin, iren)
+
+
+def PrintColorBlindType():
+    if isColorblind == 0:
+        return "NONE"
+    elif isColorblind == 1:
+        return "ALL"
+    elif isColorblind == 2:
+        return "DEUTERANOPIA"
+    elif isColorblind == 3:
+        return "PROTONOPIA"
+    elif isColorblind == 4:
+        return "TRITANOPIA"
+
+#    return {
+#        "NONE": isColorblind == 0,
+#        "ALL": isColorblind == 1,
+#        "DEUTERANOPIA": isColorblind == 2,
+#        "PROTONOPIA": isColorblind == 3,
+#        "TRITANOPIA": isColorblind == 4
+#    }
 
 
 ''' 
@@ -437,6 +469,9 @@ def Keypress(obj, event):
 	elif key =="t":
 		isColorblind = TRITANOPIA
 		UpdateColor()
+	elif key =="space":
+		isColorblind = 0
+		UpdateColor()
 
 '''
 	If the user pressed a key corresponding
@@ -446,6 +481,7 @@ def Keypress(obj, event):
 	NOTE: acts like glutredisplay();
 '''
 def UpdateColor():
+    print (`isColorblind` +"\t"+PrintColorBlindType())
     pick_colors()
     lut = MakeLUT(total_bands)
     renWin = iren.GetRenderWindow()
@@ -456,14 +492,17 @@ def UpdateColor():
         actors = ren_temp.GetActors()
         actors.InitTraversal()
         actor = actors.GetNextItem()
-        while actor:
+        while actor:                
             actor.GetMapper().SetLookupTable(lut)
             actor = actors.GetNextItem()
         actors2D = ren_temp.GetActors2D()
         actors2D.InitTraversal()
         actor2D = actors2D.GetNextItem()
         while actor2D:
-            actor2D.SetLookupTable(lut)
+            if actor2D.IsA("vtkTexturedActor2D") == True:
+                actor2D.SetInput(PrintColorBlindType())
+            else:    
+                actor2D.SetLookupTable(lut)
             actor2D = actors2D.GetNextItem()
         ren_temp = rens.GetNextItem()
     renWin.Render()
