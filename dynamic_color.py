@@ -481,7 +481,6 @@ def Keypress(obj, event):
 	NOTE: acts like glutredisplay();
 '''
 def UpdateColor():
-    print (`isColorblind` +"\t"+PrintColorBlindType())
     pick_colors()
     lut = MakeLUT(total_bands)
     renWin = iren.GetRenderWindow()
