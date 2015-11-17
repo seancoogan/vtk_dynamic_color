@@ -11,7 +11,7 @@ from color import Color
 # The constant values for the colorblind options
 ALL = 1
 DEUTERANOPIA = 2
-PROTONOPIA = 3
+PROTANOPIA = 3
 TRITANOPIA = 4
 isColorblind = 0 # start by assuming not colorblind
 total_bands = 8
@@ -376,7 +376,7 @@ def PrintColorBlindType():
     elif isColorblind == 2:
         return "DEUTERANOPIA"
     elif isColorblind == 3:
-        return "PROTONOPIA"
+        return "PROTANOPIA"
     elif isColorblind == 4:
         return "TRITANOPIA"
 
@@ -384,7 +384,7 @@ def PrintColorBlindType():
 #        "NONE": isColorblind == 0,
 #        "ALL": isColorblind == 1,
 #        "DEUTERANOPIA": isColorblind == 2,
-#        "PROTONOPIA": isColorblind == 3,
+#        "PROTANOPIA": isColorblind == 3,
 #        "TRITANOPIA": isColorblind == 4
 #    }
 
@@ -447,7 +447,7 @@ def MouseMove(obj, event):
 	the event appropriately.
 '''
 def Keypress(obj, event):
-	global isColorblind, DEUTERANOPIA, PROTONOPIA, TRITANOPIA
+	global isColorblind, DEUTERANOPIA, PROTANOPIA, TRITANOPIA
 
 	key = obj.GetKeySym()
 	if key == "e":
@@ -464,7 +464,7 @@ def Keypress(obj, event):
 		isColorblind = DEUTERANOPIA
 		UpdateColor()
 	elif key =="p":
-		isColorblind = PROTONOPIA
+		isColorblind = PROTANOPIA
 		UpdateColor()
 	elif key =="t":
 		isColorblind = TRITANOPIA
@@ -612,7 +612,7 @@ def choose_rgb(val):
 	notsat = 0
 	if isColorblind == DEUTERANOPIA:
 		notsat = 1 # green
-	elif isColorblind == PROTONOPIA:
+	elif isColorblind == PROTANOPIA:
 		notsat = 0 # red
 	elif isColorblind == TRITANOPIA:
 		notsat = 2 # blue
@@ -754,7 +754,7 @@ if len(sys.argv) > 1:
 		print("\tall : \tCompletely Colorblind")
 		print("\tnone : \tNot Colorblind")
 		print("\td : \tDeuteranopia (Colorblind in the Medium Wavelength)")
-		print("\tp : \tProtonopia   (Colorblind in the Long   Wavelength)")
+		print("\tp : \tPROTANOPIA   (Colorblind in the Long   Wavelength)")
 		print("\tt : \tTritanopia   (Colorblind in the Short  Wavelength)")
 		print("\n-b 	\tNumber of bands option. Controls the number of distinct bands will be displayed.")
 		sys.exit(1)
@@ -774,7 +774,7 @@ if len(sys.argv) > 1:
 				isColorblind = DEUTERANOPIA
 			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "p":
 				# color blind to the long wavelength
-				isColorblind = PROTONOPIA
+				isColorblind = PROTANOPIA
 			elif sys.argv[i] == "-cb" and sys.argv[i+1] == "t":
 				# color blind to the short wavelength
 				isColorblind = TRITANOPIA
