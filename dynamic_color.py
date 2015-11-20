@@ -380,15 +380,6 @@ def PrintColorBlindType():
     elif isColorblind == 4:
         return "TRITANOPIA"
 
-#    return {
-#        "NONE": isColorblind == 0,
-#        "ALL": isColorblind == 1,
-#        "DEUTERANOPIA": isColorblind == 2,
-#        "PROTANOPIA": isColorblind == 3,
-#        "TRITANOPIA": isColorblind == 4
-#    }
-
-
 ''' 
 
 	Custom interactions 
@@ -621,7 +612,7 @@ def choose_rgb(val):
 	
 	sat = randint(0,2) # randomly pick the value of 1 for rgb
 	other = randint(0,2)
-	while notsat == sat or notsat == other or other == sat:
+	while notsat == sat or notsat == other or other == sat:	
 		if notsat == sat:
 			sat = randint(0,2)
 		if notsat == other:
@@ -638,9 +629,9 @@ def choose_rgb(val):
 	if isColorblind == TRITANOPIA and other == 1:
 		while fval <= 0.7:
 			fval = random.uniform(0.0, 1.0)
-	
+		
 	temp.set_value(other, fval)
-	
+		
 	# set the first color
 	if val == 1:
 		dispColor1.set_red(temp.r)
