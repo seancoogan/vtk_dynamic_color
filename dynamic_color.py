@@ -346,7 +346,7 @@ def DisplaySurface():
 	# ------------------------------------------------------------
 	ren = vtk.vtkRenderer()
 	renWin = vtk.vtkRenderWindow()
-	renWin.SetWindowName("Test")
+	renWin.SetWindowName("Dynamic Color Selection")
  	renWin.AddRenderer(ren)
 	iren = vtk.vtkRenderWindowInteractor()
 	iren.SetInteractorStyle(None)
